@@ -12,15 +12,47 @@ Follow these steps to set up and run the project:
    npm install
    ```
 
-2. **Start the LangGraph development server**:
+2. **Set up your AI model**:
+
+   - As part of Workshop Exercise 1, you need to choose an AI model for LangChain.
+   - LangChain works with all AI models, including OpenAI, Mistral, and others.
+   - We recommend using the **Groq AI API**, a model wrapper service that allows you to use popular models with a fast setup and a great free tier.
+   - You can generate a Groq AI API key **without needing a credit card**. (https://console.groq.com/keys)
+   - Refer to [LangChain's JS documentation](https://js.langchain.com/docs/integrations/chat/) for setup instructions.
+
+3. **Configure environment variables**:
+
+   - Once your API key is generated, open the `.env.example` file in the file editor (in CodeSandbox).
+   - Copy all contents and paste them into a new `.env` file you create in the root directory.
+   - Follow the [LangChain docs](https://js.langchain.com/docs/integrations/chat/groq/) to correctly name your API key environment variable.
+
+4. **Modify the AI model in the code**:
+
+   - Navigate to `src/react_agent/graph.ts`.
+   - Search for the comment `// TODO: Workshop Exercise 1`.
+   - Replace the model with the one you chose (e.g., `ChatGroq`).
+
+5. **Start the LangGraph development server**:
 
    ```bash
    npx @langchain/langgraph-cli dev
    ```
 
-3. **Test your agent**:
-   - Once the server is running, you can interact with your agent through the provided UI
-   - Use the example inputs in the JSON format (see below)
+   - In CodeSandbox, this will prompt you to open a new window on a new port. Click **Open**.
+   - Under the **Ports** tab at the bottom of CodeSandbox, you will see port `2024` created.
+   - Copy its **Forwarded Address** (e.g., `abc-2024.csb.app`). This acts as your `localhost:2024`.
+
+6. **Retrieve the LangSmith base URL**:
+
+   - After running the `npx @langchain/langgraph-cli dev` command, a LangSmith URL will be displayed.
+   - At the end of the output, you will find `baseUrl:XXX` with the generated URL.
+
+7. **Test your agent**:
+
+   - Once the server is running, you can interact with your agent through the provided UI.
+   - Use the example inputs in JSON format (see below).
+
+
 
 ## How It Works
 
