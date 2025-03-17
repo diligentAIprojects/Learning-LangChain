@@ -1,5 +1,6 @@
 import { Annotation, StateGraph } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
+// import { ChatGroq } from "@langchain/groq";
 import { z } from "zod";
 
 // Global configuration object - Feel free to modify these settings
@@ -339,11 +340,6 @@ const critiqueScenes = async (state: typeof StoryStateAnnotation.State) => {
   return { scenes: improvedScenes };
 };
 
-// To use this function, uncomment the following in the main graph:
-// .addNode("critiqueScenes", critiqueScenes)
-// .addEdge("generateScenes", "critiqueScenes")
-// .addEdge("critiqueScenes", "formatOutput")
-
 /**
  * Format the final output
  * This node organizes the generated content into a structured format
@@ -391,8 +387,8 @@ export const comicBookGraph = new StateGraph(StoryStateAnnotation)
   .addEdge("formatOutput", "__end__")
 
   // To add the critique function to the graph:
-  // .addNode("critiqueScenes", critiqueScenes)
-  // .addEdge("generateScenes", "critiqueScenes")
-  // .addEdge("critiqueScenes", "formatOutput")
+  .addNode("critiqueScenes", critiqueScenes)
+  .addEdge("generateScenes", "critiqueScenes")
+  .addEdge("critiqueScenes", "formatOutput")
 
   .compile();
