@@ -1,0 +1,9 @@
+{
+  "node_version": "20",
+  "dockerfile_lines": [],
+  "dependencies": ["."],
+  "graphs": {
+    "agent": "./src/react_agent/graph.ts:comicBookGraph"
+  },
+  "env": ".env"
+}
