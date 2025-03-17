@@ -65,28 +65,16 @@ const StoryStateAnnotation = Annotation.Root({
 });
 
 // Initialize AI model
+// TODO: Workshop Exercise 1 (EASY) - Change the model provider
+// Replace the OpenAI model with a different provider (Claude/Mistral/Groq)
+//
+// 1. Import the appropriate model class at the top of the file
+// 2. Replace this model configuration with one for your chosen provider
+// 3. Look up the correct model name for your provider
 const model = new ChatOpenAI({
   model: "gpt-4o-mini",
   temperature: 0.7,
 });
-
-// TODO: Workshop Exercise 1 (EASY) - Change the model provider
-//
-// WORKSHOP INSTRUCTIONS:
-// Replace the OpenAI model with a different provider (Claude/Mistral/Groq)
-//
-// 1. Import the appropriate model class at the top of the file
-//    Example: import { ChatAnthropic } from "@langchain/anthropic";
-//
-// 2. Replace this model configuration with one for your chosen provider
-//    - Look up the correct model name for your provider
-//    - Add any provider-specific parameters
-//
-// EXAMPLE (you should modify this for your chosen provider):
-// const model = new ChatAnthropic({
-//   model: "claude-3-haiku-20240307",
-//   temperature: 0.7,
-// });
 
 /**
  * Process audience inputs
@@ -292,6 +280,70 @@ const generateScenes = async (state: typeof StoryStateAnnotation.State) => {
   return { scenes };
 };
 
+// TODO: Workshop Exercise 2 (MEDIUM) - Add a critique function
+// Complete this function to evaluate and improve the generated scenes
+
+const critiqueScenes = async (state: typeof StoryStateAnnotation.State) => {
+  console.log("Critiquing scenes...");
+
+  const improvedScenes = [];
+
+  for (const scene of state.scenes) {
+    // Define your critique schema here
+    const critiqueSchema = z.object({
+      // Add schema properties for strengths, weaknesses, and improvements
+      // Example:
+      // strengths: z.array(z.string()).describe("Strengths of the scene"),
+      // weaknesses: z.array(z.string()).describe("Areas for improvement"),
+      // improvedDescription: z.string().describe("Enhanced scene description"),
+      // improvedImagePrompt: z.string().describe("Enhanced image prompt")
+    });
+
+    // Create your critique prompt here
+    const critiquePrompt = `
+      As an expert comic book editor, critique and improve this murder mystery scene:
+      
+      SCENE ${scene.sceneNumber}: ${scene.title}
+      DESCRIPTION: ${scene.description}
+      IMAGE PROMPT: ${scene.imagePrompt}
+      
+      // Add instructions for what aspects to critique and how to improve
+      // Example:
+      // First identify strengths and weaknesses of this scene in terms of:
+      // - Visual storytelling and composition
+      // - Mystery elements and clue placement
+      // - Character development and dialogue
+      // - Pacing and tension
+      // 
+      // Then provide improved versions of both the scene description and image prompt
+      // that address the weaknesses while preserving the strengths.
+    `;
+
+    // Generate critique and improvements
+    const critique = await model
+      .withStructuredOutput(critiqueSchema, {
+        name: `critique_scene_${scene.sceneNumber}`,
+      })
+      .invoke(critiquePrompt);
+
+    // Create improved scene with critique feedback
+    improvedScenes.push({
+      // Use critique results to create an improved scene
+      // Example:
+      // ...scene,
+      // description: critique.improvedDescription,
+      // imagePrompt: critique.improvedImagePrompt
+    });
+  }
+
+  return { scenes: improvedScenes };
+};
+
+// To use this function, uncomment the following in the main graph:
+// .addNode("critiqueScenes", critiqueScenes)
+// .addEdge("generateScenes", "critiqueScenes")
+// .addEdge("critiqueScenes", "formatOutput")
+
 /**
  * Format the final output
  * This node organizes the generated content into a structured format
@@ -321,115 +373,6 @@ const formatOutput = async (state: typeof StoryStateAnnotation.State) => {
   };
 };
 
-// TODO: Workshop Exercise 2 (MEDIUM) - Add a critique function
-//
-// WORKSHOP INSTRUCTIONS:
-// Implement a scene critique function that evaluates and improves the generated scenes
-//
-// 1. Create a function with this signature:
-//    const critiqueScenes = async (state: typeof StoryStateAnnotation.State) => { ... }
-//
-// 2. Inside the function:
-//    - Create a schema for critique feedback using z.object()
-//    - Loop through each scene in state.scenes
-//    - For each scene, create a prompt asking the model to critique it
-//    - Use model.withStructuredOutput to get critique results
-//    - Use the critique to create improved scenes
-//    - Return the improved scenes
-//
-// 3. When you've implemented the function, add it to the graph
-//    by uncommenting and modifying the appropriate edge connections
-//
-// FUNCTION SKELETON (fill in the missing implementation):
-/*
-const critiqueScenes = async (state: typeof StoryStateAnnotation.State) => {
-  console.log("Critiquing scenes...");
-  
-  // Create an array to hold the improved scenes
-  const improvedScenes = [];
-  
-  // Loop through each scene
-  for (const scene of state.scenes) {
-    // TODO: Create your critique schema here
-    const critiqueSchema = z.object({
-      // Define your schema properties here
-    });
-    
-    // TODO: Create your critique prompt here
-    const critiquePrompt = `
-      // Your prompt text here
-    `;
-    
-    // TODO: Use the model to generate critique and improvements
-    const critique = await model
-      .withStructuredOutput(critiqueSchema, { name: `critique_scene_${scene.sceneNumber}` })
-      .invoke(critiquePrompt);
-    
-    // TODO: Create an improved scene using the critique
-    improvedScenes.push({
-      // Your improved scene object here
-    });
-  }
-  
-  return { scenes: improvedScenes };
-};
-*/
-
-// TODO: Workshop Exercise 3 (ADVANCED) - Create an enhanced visual description generator
-//
-// WORKSHOP INSTRUCTIONS:
-// Implement a function that creates more detailed and artistic image prompts
-//
-// 1. Create a function with this signature:
-//    const enhanceVisualDescription = async (state: typeof StoryStateAnnotation.State) => { ... }
-//
-// 2. Inside the function:
-//    - Create a schema for visual elements using z.object()
-//    - Loop through each scene in state.scenes
-//    - For each scene, create a prompt asking for detailed visual analysis
-//    - Use model.withStructuredOutput to get enhanced visual descriptions
-//    - Use the results to create improved image prompts
-//    - Return the scenes with enhanced prompts
-//
-// 3. When you've implemented the function, add it to the graph
-//    by uncommenting and modifying the appropriate edge connections
-//
-// FUNCTION SKELETON (fill in the missing implementation):
-/*
-const enhanceVisualDescription = async (state: typeof StoryStateAnnotation.State) => {
-  console.log("Enhancing visual descriptions...");
-  
-  // Create an array to hold the enhanced scenes
-  const enhancedScenes = [];
-  
-  // Loop through each scene
-  for (const scene of state.scenes) {
-    // TODO: Create your visual elements schema here
-    const visualSchema = z.object({
-      // Define your schema properties here
-      // Consider including: artisticStyle, colorPalette, composition, etc.
-    });
-    
-    // TODO: Create your visual analysis prompt here
-    const visualPrompt = `
-      // Your prompt text here
-    `;
-    
-    // TODO: Use the model to generate enhanced visual descriptions
-    const enhancedVisual = await model
-      .withStructuredOutput(visualSchema, { name: `enhance_visual_${scene.sceneNumber}` })
-      .invoke(visualPrompt);
-    
-    // TODO: Create a scene with the enhanced image prompt
-    enhancedScenes.push({
-      // Your enhanced scene object here
-    });
-  }
-  
-  return { scenes: enhancedScenes };
-};
-*/
-
 /**
  * Create the main graph
  * This defines the workflow of our story generator
@@ -447,8 +390,9 @@ export const comicBookGraph = new StateGraph(StoryStateAnnotation)
   .addEdge("generateScenes", "formatOutput")
   .addEdge("formatOutput", "__end__")
 
-  // After implementing the workshop exercises, you can add them to the graph:
-  // Example for Exercise 2: .addEdge("generateScenes", "critiqueScenes").addEdge("critiqueScenes", "formatOutput")
-  // Example for Exercise 3: .addEdge("generateScenes", "enhanceVisualDescription").addEdge("enhanceVisualDescription", "formatOutput")
+  // To add the critique function to the graph:
+  // .addNode("critiqueScenes", critiqueScenes)
+  // .addEdge("generateScenes", "critiqueScenes")
+  // .addEdge("critiqueScenes", "formatOutput")
 
   .compile();
