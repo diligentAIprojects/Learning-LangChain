@@ -12,47 +12,15 @@ Follow these steps to set up and run the project:
    npm install
    ```
 
-2. **Set up your AI model**:
-
-   - As part of Workshop Exercise 1, you need to choose an AI model for LangChain.
-   - LangChain works with all AI models, including OpenAI, Mistral, and others.
-   - We recommend using the **Groq AI API**, a model wrapper service that allows you to use popular models with a fast setup and a great free tier.
-   - You can generate a Groq AI API key **without needing a credit card**. (https://console.groq.com/keys)
-   - Refer to [LangChain's JS documentation](https://js.langchain.com/docs/integrations/chat/) for setup instructions.
-
-3. **Configure environment variables**:
-
-   - Once your API key is generated, open the `.env.example` file in the file editor (in CodeSandbox).
-   - Copy all contents and paste them into a new `.env` file you create in the root directory.
-   - Follow the [LangChain docs](https://js.langchain.com/docs/integrations/chat/groq/) to correctly name your API key environment variable.
-
-4. **Modify the AI model in the code**:
-
-   - Navigate to `src/react_agent/graph.ts`.
-   - Search for the comment `// TODO: Workshop Exercise 1`.
-   - Replace the model with the one you chose (e.g., `ChatGroq`).
-
-5. **Start the LangGraph development server**:
+2. **Start the LangGraph development server**:
 
    ```bash
    npx @langchain/langgraph-cli dev
    ```
 
-   - In CodeSandbox, this will prompt you to open a new window on a new port. Click **Open**.
-   - Under the **Ports** tab at the bottom of CodeSandbox, you will see port `2024` created.
-   - Copy its **Forwarded Address** (e.g., `abc-2024.csb.app`). This acts as your `localhost:2024`.
-
-6. **Retrieve the LangSmith base URL**:
-
-   - After running the `npx @langchain/langgraph-cli dev` command, a LangSmith URL will be displayed.
-   - At the end of the output, you will find `baseUrl:XXX` with the generated URL.
-
-7. **Test your agent**:
-
-   - Once the server is running, you can interact with your agent through the provided UI.
-   - Use the example inputs in JSON format (see below).
-
-
+3. **Test your agent**:
+   - Once the server is running, you can interact with your agent through the provided UI
+   - Use the example inputs in the JSON format (see below)
 
 ## How It Works
 
@@ -118,39 +86,35 @@ Switch from OpenAI to Claude, Mistral, or Groq:
 
 This exercise teaches you about model selection and configuration in LangChain.
 
-### Exercise 2: Add a Scene Critique Function (MEDIUM)
+### Exercise 2: Story Critique & Enhancement
 
-Implement a critique function that evaluates and improves the generated scenes:
+Complete the critique function to add an editorial review step to your workflow:
 
-- Create a schema for structured critique feedback
-- Design a prompt that asks the model to analyze scene quality
-- Generate improvements based on the critique
-- Integrate this function into the graph workflow
+- Fill in the schema to capture strengths, weaknesses, and improvements
+- Create an effective prompt that instructs the model to analyze narrative elements
+- Apply AI-generated improvements to enhance scene descriptions and image prompts
+- Integrate this function into the processing graph
 
-This exercise teaches you about chain-of-thought reasoning and self-improvement in AI workflows.
+In this exercise, you'll learn to implement a self-improvement mechanism where the AI reviews and enhances its own output. This pattern is widely used in production systems to improve content quality and consistency.
 
-### Exercise 3: Enhanced Visual Description Generator (ADVANCED)
+The critique function should analyze aspects like:
 
-Create a specialized function for generating more detailed and artistic image prompts:
+- Visual storytelling and composition
+- Mystery elements and clue placement
+- Character development and dialogue
+- Pacing and tension
 
-- Design a structured schema for visual elements (style, color, composition)
-- Develop a prompt that guides the model to analyze scenes visually
-- Generate enhanced image prompts that would work better for image generation
-- Integrate this function into the main workflow
+Rather than just generating content in one pass, this multi-step approach produces higher quality results by applying targeted improvements based on specific feedback.
 
-This exercise teaches you about specialized AI tasks and advanced prompt engineering for visual content.
-
-### How to Approach the Exercises
+### How to Complete the Exercises
 
 For each exercise:
 
 1. **Locate the TODO comment** in the code that corresponds to the exercise
-2. **Read the instructions** carefully - they explain what you need to implement
-3. **Use the provided function skeleton** as a starting point - it contains comments showing what you need to fill in
-4. **Complete the implementation** according to the instructions
-5. **Integrate your new function** into the graph by adding the appropriate edges
-
-The code contains skeleton implementations with missing parts for you to fill in, not complete solutions. This approach gives you structure while still requiring you to think through the implementation details.
+2. **Read the instructions** to understand what you need to implement
+3. **For Exercise 1**, follow the steps to change the model provider
+4. **For Exercise 2**, complete the skeleton function that's already in the code
+5. **Add your completed critique function** to the graph by uncommenting and adding the suggested edges
 
 ## Example Output
 
