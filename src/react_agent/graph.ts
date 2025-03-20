@@ -1,16 +1,14 @@
 import { Annotation, StateGraph } from "@langchain/langgraph";
-import { ChatOpenAI } from "@langchain/openai";
-// import { ChatGroq } from "@langchain/groq";
+import { ChatGroq } from "@langchain/groq";
 import { z } from "zod";
 
-// Global configuration object - Feel free to modify these settings
+// Simplified configuration with fewer scenes for token efficiency
 const CONFIG = {
-  sceneCount: 3, // The number of scenes in the comic book
+  sceneCount: 3,
 };
 
 /**
- * Define the state schema for our comic book story generator
- * This controls what data is stored and passed between nodes in our graph
+ * Simplified state schema without image prompts
  */
 const StoryStateAnnotation = Annotation.Root({
   // User input
@@ -24,7 +22,7 @@ const StoryStateAnnotation = Annotation.Root({
     reducer: (current, update) => update,
   }),
 
-  // Story plan
+  // Story plan - streamlined
   storyPlan: Annotation<{
     title: string;
     premise: string;
@@ -35,7 +33,7 @@ const StoryStateAnnotation = Annotation.Root({
     reducer: (current, update) => update,
   }),
 
-  // Scenes with visual descriptions
+  // Scenes - removed visual descriptions
   scenes: Annotation<
     {
       sceneNumber: number;
@@ -43,14 +41,13 @@ const StoryStateAnnotation = Annotation.Root({
       description: string;
       characters: string[];
       setting: string;
-      imagePrompt: string;
     }[]
   >({
     default: () => [],
     reducer: (current, update) => current.concat(update),
   }),
 
-  // Final output
+  // Final output - removed image prompts
   finalOutput: Annotation<{
     title: string;
     premise: string;
@@ -58,60 +55,47 @@ const StoryStateAnnotation = Annotation.Root({
       sceneNumber: number;
       title: string;
       description: string;
-      imagePrompt: string;
     }[];
   }>({
     reducer: (current, update) => update,
   }),
 });
 
-// Initialize AI model
-// TODO: Workshop Exercise 1 (EASY) - Change the model provider
-// Replace the OpenAI model with a different provider (Claude/Mistral/Groq)
-//
-// 1. Import the appropriate model class at the top of the file
-// 2. Replace this model configuration with one for your chosen provider
-// 3. Look up the correct model name for your provider
-const model = new ChatOpenAI({
-  model: "gpt-4o-mini",
-  temperature: 0.7,
+// Initialize AI model with adjusted parameters for reliability
+const model = new ChatGroq({
+  model: "gemma2-9b-it",
+  temperature: 0.5, // Lower temperature for more deterministic outputs
+  maxTokens: 1500, // Further reduced to avoid hitting limits
+  maxRetries: 3, // Increased retries
+  timeout: 60000, // 60 second timeout
 });
 
 /**
  * Process audience inputs
- * This node handles the initial data and makes sure it's in the right format
  */
 const processInputs = async (state: typeof StoryStateAnnotation.State) => {
-  console.log("Processing audience inputs...");
+  console.log("Processing inputs...");
 
-  // Handle different input formats
   if (state.audience_inputs && Array.isArray(state.audience_inputs)) {
-    return {}; // Input is already in the expected format
+    return {};
   } else if (
     state.audience_inputs &&
     state.audience_inputs.audience_inputs &&
     Array.isArray(state.audience_inputs.audience_inputs)
   ) {
-    // Input is in the format { audience_inputs: [...] }
     return { audience_inputs: state.audience_inputs.audience_inputs };
   }
 
-  return {}; // Keep as is if we can't determine the format
-
-  // You can enhance this function to improve input handling if needed
+  return {};
 };
 
 /**
- * Plan the story based on audience inputs
- * This node generates the overall narrative structure
+ * Plan the story based on audience inputs - streamlined prompt
  */
 const planStory = async (state: typeof StoryStateAnnotation.State) => {
   console.log("Planning story...");
 
-  // Get the audience inputs directly from the state
   const inputItems = state.audience_inputs || [];
-
-  // Create a mapping function to extract categories
   const getCategoryItems = (category) => {
     return inputItems
       .filter(
@@ -122,21 +106,14 @@ const planStory = async (state: typeof StoryStateAnnotation.State) => {
       .map((item) => item.description);
   };
 
-  // Extract basic categories
   const characters = getCategoryItems("character");
   const settings = getCategoryItems("setting");
   const plotTwists = getCategoryItems("plot_twist");
 
-  // You can extract more categories to enrich your story
-
-  // Define the story plan schema
+  // Define the story plan schema - simplified
   const storyPlanSchema = z.object({
-    title: z
-      .string()
-      .describe("An engaging title for the murder mystery comic"),
-    premise: z
-      .string()
-      .describe("A concise description of the overall mystery"),
+    title: z.string().describe("Title for the murder mystery comic"),
+    premise: z.string().describe("Brief premise of the mystery"),
     characters: z.array(
       z.object({
         name: z.string().describe("Character name"),
@@ -153,41 +130,31 @@ const planStory = async (state: typeof StoryStateAnnotation.State) => {
       .array(
         z.object({
           title: z.string().describe("Scene title"),
-          description: z.string().describe("What happens in this scene"),
+          description: z.string().describe("Brief scene description"),
         })
       )
-      .describe(`The story should have exactly ${CONFIG.sceneCount} scenes`),
+      .describe(`The story should have ${CONFIG.sceneCount} scenes`),
   });
 
-  // Create a prompt for the story plan
+  // Extremely simplified prompt
   const storyPlanPrompt = `
-    Create a comic book SHORT MURDER MYSTERY story plan based on the following audience submissions:
+    Create a brief murder mystery with ${CONFIG.sceneCount} scenes using:
+    ${characters.length > 0 ? `CHARACTERS: ${characters.join(", ")}` : "Create 2-3 characters"}
+    ${settings.length > 0 ? `SETTINGS: ${settings.join(", ")}` : "Create 1-2 settings"}
+    ${plotTwists.length > 0 ? `PLOT TWIST: ${plotTwists[0]}` : ""}
     
-    ${characters.length > 0 ? `CHARACTERS:\n${characters.join("\n")}` : ""}
-    
-    ${settings.length > 0 ? `SETTINGS:\n${settings.join("\n")}` : ""}
-    
-    ${plotTwists.length > 0 ? `PLOT TWISTS:\n${plotTwists.join("\n")}` : ""}
-    
-    IMPORTANT: 
-    - The comic will have EXACTLY ${CONFIG.sceneCount} scenes.
-    - Create a complete murder mystery with a clear beginning, middle, and cliffhanger ending.
-    - Each scene should have a max of 200 words.
-    - Be creative and develop a unique story that integrates these elements.
-    
-    // You can add more specific instructions for the story plan
+    Keep all descriptions under 100 words per scene.
   `;
 
-  // Generate the story plan using the model
   const storyPlan = await model
     .withStructuredOutput(storyPlanSchema, { name: "story_plan" })
     .invoke(storyPlanPrompt);
 
-  // Ensure we have exactly the configured number of scenes
+  // Ensure correct scene count
   let scenes = storyPlan.scenes;
   if (scenes.length !== CONFIG.sceneCount) {
     console.log(
-      `Warning: Got ${scenes.length} scenes, adjusting to ${CONFIG.sceneCount}`
+      `Adjusting scenes from ${scenes.length} to ${CONFIG.sceneCount}`
     );
     while (scenes.length < CONFIG.sceneCount) {
       scenes.push({
@@ -198,78 +165,44 @@ const planStory = async (state: typeof StoryStateAnnotation.State) => {
     scenes = scenes.slice(0, CONFIG.sceneCount);
   }
 
-  return {
-    storyPlan: {
-      ...storyPlan,
-      scenes,
-    },
-  };
+  return { storyPlan: { ...storyPlan, scenes } };
 };
 
-/**
- * Generate scenes with visual descriptions
- * This node creates detailed scenes and image prompts
- */
 const generateScenes = async (state: typeof StoryStateAnnotation.State) => {
-  console.log("Generating scenes with visual descriptions...");
+  console.log("Generating scenes...");
 
   const scenes = [];
 
-  // Generate each scene sequentially
   for (let i = 0; i < CONFIG.sceneCount; i++) {
     const sceneNumber = i + 1;
     const scenePlan = state.storyPlan.scenes[i];
 
-    // Schema for the scene and visual description
+    // Simplified scene schema with minimal requirements
     const sceneSchema = z.object({
       sceneNumber: z.number().describe(`Scene number (1-${CONFIG.sceneCount})`),
       title: z.string().describe("Scene title"),
-      description: z
-        .string()
-        .describe("Detailed scene description (max 200 words)"),
-      characters: z
-        .array(z.string())
-        .describe("Characters present in the scene"),
-      setting: z.string().describe("Setting of the scene"),
-      imagePrompt: z
-        .string()
-        .describe("Image generation prompt (max 75 words)"),
+      description: z.string().describe("Scene description (max 100 words)"),
+      characters: z.array(z.string()).describe("Characters in the scene"),
+      setting: z.string().describe("Setting name"),
     });
 
-    // Create a prompt for scene generation
+    // Extremely simplified prompt to reduce token usage
     const scenePrompt = `
-      Create scene ${sceneNumber} of a ${CONFIG.sceneCount}-scene murder mystery comic book based on this story plan:
+      Create scene ${sceneNumber}/${CONFIG.sceneCount} for mystery "${state.storyPlan.title}":
       
-      TITLE: ${state.storyPlan.title}
-      PREMISE: ${state.storyPlan.premise}
+      PLAN: ${scenePlan.title}
       
-      SCENE PLAN:
-      ${scenePlan.title}: ${scenePlan.description}
-      
-      AVAILABLE CHARACTERS:
-      ${JSON.stringify(state.storyPlan.characters)}
-      
-      AVAILABLE SETTINGS:
-      ${JSON.stringify(state.storyPlan.settings)}
+      AVAILABLE CHARACTERS: ${state.storyPlan.characters.map((c) => c.name).join(", ")}
+      AVAILABLE SETTINGS: ${state.storyPlan.settings.map((s) => s.name).join(", ")}
       
       Provide:
-      1. A detailed scene description (max 200 words) that advances the murder mystery.
-      2. List of characters present in this scene.
-      3. The specific setting for this scene.
-      4. An image generation prompt (max 75 words) focusing on key visual elements.
+      1. Brief scene description (max 100 words)
+      2. List of 2-3 main characters present
+      3. Single setting name
       
-      The scene should be visually interesting and include details about:
-      - Character expressions and positioning
-      - Environmental details that create mood
-      - Any important clues or evidence
-      - Comic book style composition (panels, angles, etc.)
-      
-      If this is the final scene (${sceneNumber} of ${CONFIG.sceneCount}), end with a cliffhanger but don't make it obvious.
-      
-      // You can add more guidance for scene generation
+      ${sceneNumber === CONFIG.sceneCount ? "Include a cliffhanger." : ""}
     `;
 
-    // Generate the scene using the model
     const scene = await model
       .withStructuredOutput(sceneSchema, { name: `scene_${sceneNumber}` })
       .invoke(scenePrompt);
@@ -281,83 +214,20 @@ const generateScenes = async (state: typeof StoryStateAnnotation.State) => {
   return { scenes };
 };
 
-// TODO: Workshop Exercise 2 (MEDIUM) - Add a critique function
-// Complete this function to evaluate and improve the generated scenes
-
-const critiqueScenes = async (state: typeof StoryStateAnnotation.State) => {
-  console.log("Critiquing scenes...");
-
-  const improvedScenes = [];
-
-  for (const scene of state.scenes) {
-    // Define your critique schema here
-    const critiqueSchema = z.object({
-      // Add schema properties for strengths, weaknesses, and improvements
-      // Example:
-      // strengths: z.array(z.string()).describe("Strengths of the scene"),
-      // weaknesses: z.array(z.string()).describe("Areas for improvement"),
-      // improvedDescription: z.string().describe("Enhanced scene description"),
-      // improvedImagePrompt: z.string().describe("Enhanced image prompt")
-    });
-
-    // Create your critique prompt here
-    const critiquePrompt = `
-      As an expert comic book editor, critique and improve this murder mystery scene:
-      
-      SCENE ${scene.sceneNumber}: ${scene.title}
-      DESCRIPTION: ${scene.description}
-      IMAGE PROMPT: ${scene.imagePrompt}
-      
-      // Add instructions for what aspects to critique and how to improve
-      // Example:
-      // First identify strengths and weaknesses of this scene in terms of:
-      // - Visual storytelling and composition
-      // - Mystery elements and clue placement
-      // - Character development and dialogue
-      // - Pacing and tension
-      // 
-      // Then provide improved versions of both the scene description and image prompt
-      // that address the weaknesses while preserving the strengths.
-    `;
-
-    // Generate critique and improvements
-    const critique = await model
-      .withStructuredOutput(critiqueSchema, {
-        name: `critique_scene_${scene.sceneNumber}`,
-      })
-      .invoke(critiquePrompt);
-
-    // Create improved scene with critique feedback
-    improvedScenes.push({
-      // Use critique results to create an improved scene
-      // Example:
-      // ...scene,
-      // description: critique.improvedDescription,
-      // imagePrompt: critique.improvedImagePrompt
-    });
-  }
-
-  return { scenes: improvedScenes };
-};
-
 /**
- * Format the final output
- * This node organizes the generated content into a structured format
+ * Format the final output - simplified
  */
 const formatOutput = async (state: typeof StoryStateAnnotation.State) => {
-  console.log("Formatting final output...");
+  console.log("Formatting output...");
 
-  // Sort scenes by number
   const finalScenes = [...state.scenes].sort(
     (a, b) => a.sceneNumber - b.sceneNumber
   );
 
-  // Create simplified output format
   const simplifiedScenes = finalScenes.map((scene) => ({
     sceneNumber: scene.sceneNumber,
     title: scene.title,
     description: scene.description,
-    imagePrompt: scene.imagePrompt,
   }));
 
   return {
@@ -370,8 +240,7 @@ const formatOutput = async (state: typeof StoryStateAnnotation.State) => {
 };
 
 /**
- * Create the main graph
- * This defines the workflow of our story generator
+ * Create the main graph - simplified workflow
  */
 export const comicBookGraph = new StateGraph(StoryStateAnnotation)
   .addNode("processInputs", processInputs)
@@ -379,16 +248,11 @@ export const comicBookGraph = new StateGraph(StoryStateAnnotation)
   .addNode("generateScenes", generateScenes)
   .addNode("formatOutput", formatOutput)
 
-  // Define the basic flow
+  // Define the flow
   .addEdge("__start__", "processInputs")
   .addEdge("processInputs", "planStory")
   .addEdge("planStory", "generateScenes")
   .addEdge("generateScenes", "formatOutput")
   .addEdge("formatOutput", "__end__")
-
-  // To add the critique function to the graph:
-  .addNode("critiqueScenes", critiqueScenes)
-  .addEdge("generateScenes", "critiqueScenes")
-  .addEdge("critiqueScenes", "formatOutput")
 
   .compile();
